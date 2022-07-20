@@ -12,8 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ml.tarefa001.dto.CategoryDTO;
 import com.ml.tarefa001.dto.ClientDTO;
+import com.ml.tarefa001.entities.Category;
 import com.ml.tarefa001.entities.Client;
+import com.ml.tarefa001.repositories.CategoryRepository;
 import com.ml.tarefa001.repositories.ClientRepository;
 import com.ml.tarefa001.services.exceptions.DatabaseException;
 import com.ml.tarefa001.services.exceptions.ResourceNotFoundException;
@@ -23,6 +26,9 @@ public class ClientService {
 
 	@Autowired
 	private ClientRepository repository;
+	
+	@Autowired
+	private CategoryRepository categoryRepository;
 	
 	@Transactional(readOnly = true)
 	public Page<ClientDTO> findAllPaged(PageRequest pageRequest) {
@@ -40,7 +46,7 @@ public class ClientService {
 	@Transactional
 	public ClientDTO insert(ClientDTO dto) {
 		Client entity = new Client();
-		//entity.setName(dto.getName());
+		copyDtoToEntity(dto, entity);
 		entity = repository.save(entity);
 		return new ClientDTO(entity);
 	}
@@ -49,7 +55,7 @@ public class ClientService {
 	public ClientDTO update(Long id, ClientDTO dto) {
 		try {
 		Client entity = repository.getReferenceById(id);
-		//entity.setName(dto.getName());
+		copyDtoToEntity(dto, entity);
 		entity = repository.save(entity);
 		return new ClientDTO(entity);
 	}
@@ -67,6 +73,21 @@ public class ClientService {
 		}
 		catch (DataIntegrityViolationException e) {
 			throw new DatabaseException("Integrity violation");
+		}
+	}
+	
+	private void copyDtoToEntity(ClientDTO dto, Client entity) {
+		
+		entity.setName(dto.getName());
+		entity.setCpf(dto.getCpf());
+		entity.setIncome(dto.getIncome());
+		entity.setBirthDate(dto.getBirthDate());
+		entity.setChildren(dto.getChildren());
+		
+		entity.getCategories().clear();
+		for (CategoryDTO catDto : dto.getCategories()) {
+			Category category = categoryRepository.getReferenceById(catDto.getId());
+			entity.getCategories().add(category);
 		}
 	}
 }
